@@ -1,5 +1,5 @@
 precision mediump float;
-
+ 
 
 
 
@@ -16,8 +16,8 @@ uniform int breath_part;
 uniform float phasor_whole;
 uniform float phasor_half;
 uniform float phasor_part;
-uniform float narration_amplitude;
- 
+ uniform float narration_amplitude;
+
 //Talk amplitude vale should come here
 //uniform float talk_value;
  float talk_value = 0.0;
@@ -73,8 +73,8 @@ vec3 testCircle( float  testValue, vec2 pos,vec2 position,int testInt){
       }
     float distance = length(position - pos);
     distance = smoothstep(0.1 +
-    float(testValue/2.)/2.,
-    float(testValue/2.)/2.,
+    float(testValue)/2.,
+    float(testValue)/2.,
     distance) ;
     vec3 c = testCol * distance ;
     return c;
@@ -83,60 +83,52 @@ vec3 testCircle( float  testValue, vec2 pos,vec2 position,int testInt){
 //circles count
 #define steps  12.
 
-#define pi  (3.14159265359*2.)/steps
+#define pi  (3.14159265359*2.)
 
-vec3 rings(vec2 uv ,vec3 color, float phaseVal,float mainMovement,float talk){
+float particles(vec2 uv, float phaseVal,float mainMovement,float talk, vec2 particlesUv){
 
+    float center = length(uv);
+   float smoothMix = mix(0.0,0.015,phaseVal);
+    center = smoothstep(0.2 + smoothMix,0.2,center);
+    // center = mix(smoothstep(0.201,0.2,center),smoothstep(0.4,0.2,center),phaseVal);
+     float particlesSum = 0.0;
+     
+         for (float iCircle = 1.; iCircle <= 5.; iCircle+=1.0){
+             float numParticles = 3. * iCircle;
+            for (float iParticle = 0.; iParticle < 100.; iParticle++) {
+                if (iParticle >= numParticles) {
+                     break;
+                 }
+            float rad = (pi / numParticles) * iParticle;
 
-vec3 col = vec3(0.);
+            float direction = 0.5 - iCircle/12.;
 
+            if((iCircle == 1.)||(iCircle == 3.)||(iCircle == 5.)){
+                direction *= -1.0;
+            }
 
+            float posX = sin(rad + mainMovement*direction) * (iCircle/2. + 0.) * phaseVal*1.0;
+            float posY = cos(rad + mainMovement*direction) * (iCircle/2. + 0.) * phaseVal*1.0;
+            vec2 particlePos = vec2(posX,posY);
 
-uv /= 1.0 + clamp(0.5,1.0,phaseVal*12.) ;
+            float dist = length(particlesUv - particlePos);
+            // dist += line(uv,particlePos,vec2(0.0));
+            float particleSize = 0.1 ;
+            float iterateCircle = (5. - iCircle)/1.;
+            particleSize *= iterateCircle;
+            particleSize /= mix( 0.5,((phaseVal) + 1.),easyIn(phaseVal)  );//pow( 1. + phaseVal, 2.0) * .;
+            particleSize = clamp(0.,1.0,particleSize);
+            particleSize += talk;
+            dist = smoothstep(particleSize + 0.1,particleSize,dist);
+            particlesSum +=  (dist);
+            
 
-
-
-for(float i = 1.;i<(steps+1.);i++){
-
-    vec2 p = vec2( sin(pi * i + (mainMovement))*(phaseVal + talk/2. ) , cos(pi * i + (mainMovement))*phaseVal );
-    
-
-//base circle
-float d = length(uv-p);
-
-//Drawing circle stroke
-float strokeDist = smoothstep(0.202,0.201,d);
-strokeDist -= smoothstep(0.2,0.199,d);
-vec3 strokeColor = saturation(color,0.3);
-vec3 stroke = vec3(strokeDist)*strokeColor;
-stroke = (stroke)*smoothstep(0.1,0.4,length(uv));
-
-//Drawing a circle
-d = smoothstep(0.201,0.2,d);
-
-//seting circle transparency
-d /= 10.;
-
-//adding circles with stroke
-col +=  vec3(d)*color + (stroke);
-
-}
-
-//center smooth circle
-float d = length(uv);
-float centerD = length(uv);
-float centerD2 = centerD;
-centerD = smoothstep(0.2,0.1,centerD);
-centerD2 = smoothstep(0.2,0.1,centerD2);
-vec3 centerCol =  vec3(centerD2)*color;
-
-//adding center smooth circle
-col *= 1.0 - centerD;
-col += centerCol;
-col.r = clamp(0.0,color.r,col.r);
-col.g = clamp(0.0,color.g,col.g);
-col.b = clamp(0.0,color.b,col.b);
-return col;
+        }
+    }
+    // particlesSum *= 1.0 - center;
+    // particlesSum += center/2.;
+    particlesSum = clamp(0.0,1.0,particlesSum);
+    return particlesSum ;
 }
 
 void main()
@@ -146,16 +138,14 @@ void main()
     vec3 col = vec3(0.);
     
     //to debug uniforms
-//    col += testCircle(float(session_part_progress/2.),vec2(0.25,0.8), uv,session_part);
+  //  col += testCircle(float(phasor_part),vec2(0.25,0.8), uv,session_part);
    
 
 
    //adding talk movement
    if(session_part == 1){
       //perlin noise talk simulation
-    talk_value =noise11(session_part_progress*117.)/12.;
-   }else{
-    talk_value = 0.01;
+      talk_value = noise11(narration_amplitude*117.)/12.;
    }
 
    //wrapping breath parts in one value
@@ -163,22 +153,26 @@ void main()
    if(breath_part == 0){
    breathValue = 0.0;
    }else if(breath_part == 1){
-   breathValue = easyInEasyOut( phasor_part);
+   breathValue = easyOut( phasor_part);
    }else if(breath_part == 2){
    breathValue = 1.0;
    }else if(breath_part == 3){
-   breathValue = 1.0 - easyInEasyOut( phasor_part);
+   breathValue = 1.0 - easyIn( phasor_part);
    }else if(breath_part == 4){
    breathValue = 0.0;
    }
    
    //set the circle scale
     uv /= 1.0;
-   //scale down animation
-   breathValue /= 17.;
+   //set animation scale
+//   breathValue /= 17.;
    
-   col += rings(uv, theme_color, breathValue ,phasor_whole,talk_value);
+  // col += rings(uv, theme_color, breathValue ,phasor_whole,talk_value);
       
+     float particleSum = particles(uv, breathValue,phasor_whole,narration_amplitude, uv * 7. );
+
+      vec3 particleCol = vec3(particleSum)*theme_color;
+       col += particleCol;
         gl_FragColor = vec4(col, 1.0);
 }
 
