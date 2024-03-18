@@ -1,41 +1,28 @@
 precision mediump float;
 
 
-#define steps  12.
-#define pi  (3.14159265359*2.)/steps
 
 
-float radius_min = 0.2;
-float radius_max = 0.4;
-float center = 0.0;
+
 
 uniform vec2 u_resolution;
 uniform float u_time;
  vec3 theme_color = vec3(0.1,0.9,0.6);
 
-float quadOut(float t) {
-    return -t * (t - 2.0);
-}
 
 
+
+
+#define pi  (3.14159265359*2.)
 #define steps  12.
-
-#define pi  (3.14159265359*2.)/steps
-
 vec3 rings(vec2 uv ,vec3 color, float phaseVal,float mainMovement,float talk){
 
 
         vec3 col = vec3(0.);
-
-
-
         uv /= 1.0 + clamp(0.5,1.0,phaseVal*12.) ;
+         for(float i = 1.;i<(steps+1.);i++){
 
-
-
-        for(float i = 1.;i<(steps+1.);i++){
-
-            vec2 p = vec2( sin(pi * i + (mainMovement))*(phaseVal + talk/2. ) , cos(pi * i + (mainMovement))*phaseVal );
+            vec2 p = vec2( sin((pi / steps )* i + (mainMovement))*(phaseVal*1.5 + talk/2. ) , cos((pi / steps) * i + (mainMovement))*phaseVal*1.5 );
             
 
         //base circle
@@ -84,17 +71,19 @@ void main()
 
     position.x *= u_resolution.x / u_resolution.y;
 
-    float distance = length(position - center);
+    float distance = length(position );
 //   phasor_whole = u_time;
     
     //  vec3 particleCol = vec3(0.0);
 
-    float breathValue = 0.0;// abs(sin(u_time/4.))/17.;
+    float breathValue =  abs(sin(u_time/4.))/17.;
 // float breathValue = u_time;
 
-      vec3 col = rings(position, theme_color, breathValue ,breathValue,0.);
- 
-        gl_FragColor = vec4(col, 1.0);
+  
+
+    vec3 col = rings(position, theme_color, breathValue ,breathValue,0.);
+        
+    gl_FragColor = vec4(col, 1.0);
 
 }
 

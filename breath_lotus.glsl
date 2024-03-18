@@ -8,7 +8,7 @@ uniform float u_time;
 #define resolution u_resolution
 #define time u_time
 
-uniform vec3 theme_color;
+vec3 theme_color = vec3(0.1,0.9,0.6);
 
 
 vec2 rotateUV(vec2 uv, float rotation)
@@ -31,7 +31,6 @@ float drawLeaf(vec2 uv, float rotation, float i, float scale, float close,float 
     if(i< 0.0)
     {
       factor = 1.0 - rotation/12.;
-    //   factor *= ;
     }else{
         factor = 1.0 - rotation/12.;
     }
@@ -44,7 +43,7 @@ float drawLeaf(vec2 uv, float rotation, float i, float scale, float close,float 
     uv2 = mix(uv2,vec2(uv2.x,uv2.y/1.3),close);
 
     float l2 = abs(uv.x ) + length(uv2);	
-    l2 = mix(smoothstep(0.22,mix(0.2,0.,close),length(uv2)),smoothstep(0.22,0.,l2),close);
+    l2 = mix(smoothstep(0.21,mix(0.2,0.,close),length(uv2)),smoothstep(0.22,0.,l2),close);
      float x = abs(uv.x- band * sign( (rotation)) /scale)  ;
     
 	float alpha = pow(uv.y,   0.5 - abs(rotation)/16.   )/.3;
@@ -54,13 +53,9 @@ float drawLeaf(vec2 uv, float rotation, float i, float scale, float close,float 
     l = smoothstep(0.1, mix(0.12,0.12,clamp(abs(rotation),0.0,1.0)), l);
 
      uv.y -= 0.7+roundness/62.;
-      uv.x -= 0.015;
     uv.y *= 0.5*uv.y;
     float rounded = length(uv);
-    l *= smoothstep(0.16,0.13,rounded );
-
-
-    
+    l *= smoothstep(0.13,0.12,rounded );
      l = mix(l2,l,  close); ;
 
     return l;
@@ -80,14 +75,10 @@ float lotus(vec2 uv, float time,float scale,float scaleB)
             float itr = float(i);
             if(modd(float(i), float(2)) == 0.){
                 itr -= 1.;
-                itr = -itr;
-          
+                itr = -itr;         
             }
             float rad = (time * pi * (itr / scale) );
-            // rad /= smoothstep() float(itr) ;
-            // leaf = smoothstep(0.0, 2., leaf);
-            //   leaf *= 1.0 - drawLeaf(uv,rad,itr, scaleB,abs(time));
-            leaf += drawLeaf(uv,rad,itr, scaleB,abs(time),float(abs(itr)))/6.;
+            leaf += drawLeaf(uv,rad,itr, scaleB,abs(time),float(abs(itr)))/4.;
         }
     return leaf;
 }
@@ -101,38 +92,42 @@ float lotusMai(vec2 uv, float time )
         
     return leaf;
 }
-
+float lotusFlower(vec2 uv, float t )
+{
+     uv /= mix(1.0, 1.2,abs(t));
+         uv *= 1.025;
+        uv.y += 0.5;        
+        vec2 spos = uv;
+       
+         uv.y -= 0.1;
+        uv.y *= 1.15; 
+       float flower = lotus(
+         mix(spos,uv*1.1,pow(abs(t),0.5))
+        ,t, 9.5,1.2);
+        uv.y /= 1.15;
+        flower  += lotus(
+            mix(spos,uv*1.2,pow(abs(t),0.5))
+            , t, 23., 0.8);
+        flower = clamp(flower,0.0,1.0);
+    return flower;
+}
 
 void main()
 {
-    vec2 uv = gl_FragCoord.xy/resolution.xy * 2.0 - 1.0;
-    uv.x *= resolution.x / resolution.y;
+   vec2 uv = gl_FragCoord.xy/u_resolution.xy * 2.0 - 1.0;
+
+    uv.x *= u_resolution.x / u_resolution.y;
     
     vec3 col = vec3(0.);
-    
-    // vec3 mixedCol = mix(vec3(1.0, 1.0, 1.0),vec3(0.0, 0.4784, 0.502),abs(uv.y / 1.5));
-    
+
     vec3 color = vec3(0.0);
-     uv.y += 0.5;
    
-
-
-        uv *= 1.0 + length(uv)/12. ;
-        float t = sin(time/4. );
-        // float t = 0.0;//sin(time/2.);
-       float leaf = lotus(uv,t, 10.,1.2);
-        uv.y -= 0.1;
-        leaf  += lotus(uv*1.2, t, 25., 0.8);
-
-        leaf = clamp(leaf,0.0,1.0);
-
-        uv.y -= 0.4;
-        float d = length(uv);//length(uv / l);
-        
-        d = smoothstep(0.22,0.2,d);
-        // leaf = mix(d,leaf,t);
-        color = vec3(0.7647, 0.9294, 0.9804)*leaf;
-
+        float breath = 0.0;//sin(time/4. );
+         breath = sin(time/4. );
+         float flower = lotusFlower(uv,breath);
+        color = theme_color*flower;
+  
+    
   
 
     gl_FragColor = vec4(color,1.0);
