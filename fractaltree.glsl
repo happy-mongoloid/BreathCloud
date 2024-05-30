@@ -11,63 +11,53 @@ uniform float u_time;
 
 
 
-float line(vec2 p, vec2 a, vec2 b){
-    vec2 pa = p-a;
-    vec2 ba = b-a;
-
-    float t = clamp(dot(pa, ba)/dot(ba,ba),0.,1.0);
-    vec2 cv = pa - ba*t;
-    
-    float d = length(cv);
-    if(distance(a, b)>2.){return 2.;}else{
-    return ( d);
-    }
-}
-
 #define pi  (3.14159265359*2.)
 #define steps  18.
-vec2 rotateUV(vec2 uv, float rotation)
-{
-    return vec2(
-        cos(rotation) * uv.x + sin(rotation) * uv.y,
-        cos(rotation) * uv.y - sin(rotation) * uv.x
-    );
+#define iResolution u_resolution
+#define iTime u_time
+#define fragCoord gl_FragCoord
+
+
+mat2 rot(float a){
+    return mat2(cos(a),-sin(a),sin(a),cos(a));
 }
-float rings(vec2 uv , float rotation,float phaseVal,float talk){
+float branch(vec2 uv,float height,float size){
+vec2 branch = vec2(0,clamp(uv.y,0.,height));
+    float d = length(uv - branch);
+    d = smoothstep(0.02,0.01,d);
+    return d;
 
-
-        vec2 pos = vec2(0.0);
-        float branchL = 0.1;
-        float branchStroke = 0.1;
-        uv -= pos;
-        float d = line(uv,vec2(0., -branchL/2.),vec2(0., branchL/2.) ) ;
-        d = smoothstep(branchStroke + 0.02  ,branchStroke,d);
-        col +=  (d) ;
-        
-        return col;
 }
 
 void main()
 {
 
     // Transforming the pixel coordinates to the range of [-1, 1]
-    vec2 position = gl_FragCoord.xy/u_resolution.xy * 2.0 - 1.0;
-
-    position.x *= u_resolution.x / u_resolution.y;
-
-    float distance = length(position );
-//   phasor_whole = u_time;
-    
-    //  vec3 particleCol = vec3(0.0);
-
-    float breathValue =  abs((u_time/2.));
-// float breathValue = u_time;
-
-  float phaseVal =  abs(sin(u_time/2.));
-    //  position =  rotateUV(position, u_time/2.);
-    vec3 col = rings(position , breathValue/8. ,0.0,phaseVal)*theme_color;
+   vec2 uv = gl_FragCoord.xy/u_resolution.xy - vec2(.5,0);
+    uv.x *= u_resolution.x/u_resolution.y;
+    vec3 col;
+    float size = .0005;
+    float height = .3;
+    // uv *= 3.;
+    float d = branch(uv,height,size);
+    // uv.y -= 0.5;
+   float phase = abs(sin(u_time)/3.);
+   
+    for(float i =1.;i<6.;i++){
+           
+            uv.x = abs(uv.x);
+            uv.y -= height/float(i+1.);
         
-    gl_FragColor = vec4(col, 1.0);
+            // height/=1.1;
+            uv *= rot(phase*(i/2.));
+            float d2 = branch(uv,height,size);
+            d += d2/2.;//max(d,d2);
+    }
+    col+= d;
+    float D = branch(uv,height,size);
+
+    col+= D;
+   gl_FragColor = vec4(col,1.0);
 
 }
 
