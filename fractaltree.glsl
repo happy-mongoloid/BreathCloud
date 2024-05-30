@@ -24,8 +24,7 @@ mat2 rot(float a){
 float branch(vec2 uv,float height,float size){
 vec2 branch = vec2(0,clamp(uv.y,0.,height));
     float d = length(uv - branch);
-    d = smoothstep(0.02,0.01,d);
-    return d;
+    return size/d;
 
 }
 
@@ -38,20 +37,17 @@ void main()
     vec3 col;
     float size = .0005;
     float height = .3;
-    // uv *= 3.;
+    uv *= 3.;
     float d = branch(uv,height,size);
-    // uv.y -= 0.5;
-   float phase = abs(sin(u_time)/3.);
    
-    for(float i =1.;i<6.;i++){
-           
+    for(float i =0.;i<12.;i++){
             uv.x = abs(uv.x);
-            uv.y -= height/float(i+1.);
+            uv.y -= height;
         
-            // height/=1.1;
-            uv *= rot(phase*(i/2.));
+            height/=1.1;
+            uv *= rot(sin(u_time)/12.);
             float d2 = branch(uv,height,size);
-            d += d2/2.;//max(d,d2);
+            d = max(d,d2);
     }
     col+= d;
     float D = branch(uv,height,size);
